@@ -123,6 +123,12 @@ st.sidebar.image("Logo-IREC.jpg", use_column_width=True)
 lang = st.sidebar.radio("Idioma / Language", options=["es", "en"], format_func=lambda x: "🇪🇸 Español" if x == "es" else "🇬🇧 English")
 t = translations[lang]
 
+def format_num(val, lang, dec=2):
+    s = f"{val:,.{dec}f}"
+    if lang == "es":
+        return s.replace(',', 'X').replace('.', ',').replace('X', '.')
+    return s
+
 st.sidebar.markdown("---")
 st.sidebar.caption("👨‍💻 Desarrollado por: **Tomás Montes**")
 
@@ -336,6 +342,8 @@ with tab1:
     
     # Gráfico de barras agrupadas con Plotly
     fig_flujos = px.bar(df_flujos, barmode="group", labels={'value': t["cf_y_axis"], 'variable': t["vehicle"]})
+    if lang == "es":
+        fig_flujos.update_layout(separators=",.")
     st.plotly_chart(fig_flujos, use_container_width=True)
 
 with tab2:
@@ -396,7 +404,7 @@ res_cols = st.columns(num_vehiculos)
 for i, v in enumerate(vehiculos_data):
     with res_cols[i]:
         st.subheader(v["nombre"])
-        st.write(f"**{t['resale_value']}** {v['reventa']:,.2f} €")
+        st.write(f"**{t['resale_value']}** {format_num(v['reventa'], lang)} €")
         
         # Si el NPV es negativo (que lo será, porque un coche es un gasto), mostramos su valor absoluto como "Coste Real"
         coste_presente = abs(v["npv"])
@@ -412,7 +420,7 @@ for i, v in enumerate(vehiculos_data):
             st.write(f"*(Multiopción {dev_text})*")
             
         st.markdown(f"### {t['npv_title']}")
-        st.markdown(f"### **{coste_presente:,.2f} €**")
+        st.markdown(f"### **{format_num(coste_presente, lang)} €**")
         st.caption(t["npv_help"])
 
 st.markdown("---")
@@ -430,8 +438,8 @@ for v in vehiculos_data:
     
     table_data.append({
         t["vehicle"]: v["nombre"],
-        t["cost_km_energy"]: f"{coste_energia_km:.4f} €",
-        t["cost_km_tco"]: f"{coste_tco_km:.4f} €"
+        t["cost_km_energy"]: f"{format_num(coste_energia_km, lang, 4)} €",
+        t["cost_km_tco"]: f"{format_num(coste_tco_km, lang, 4)} €"
     })
 
 st.table(pd.DataFrame(table_data).set_index(t["vehicle"]))
