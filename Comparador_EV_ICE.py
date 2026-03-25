@@ -103,6 +103,9 @@ st.sidebar.image("Logo-IREC.jpg", use_column_width=True)
 lang = st.sidebar.radio("Idioma / Language", options=["es", "en"], format_func=lambda x: "🇪🇸 Español" if x == "es" else "🇬🇧 English")
 t = translations[lang]
 
+st.sidebar.markdown("---")
+st.sidebar.caption("👨‍💻 Desarrollado por: **Tomás Montes**")
+
 st.title(t["title"])
 st.write(t["subtitle"])
 
