@@ -51,7 +51,10 @@ translations = {
         "npv_title": "VAN / Coste Presente Neto:",
         "npv_help": "Gasto total traído a valor de dinero de hoy.",
         "graph_analysis": "📊 Análisis Gráfico",
-        "methodology_tab": "📚 Metodología Matemática"
+        "methodology_tab": "📚 Metodología Matemática",
+        "extras": "**Incentivos y Extras**",
+        "subsidy": "Subvenciones (MOVES, etc.) (€)",
+        "charger": "Coste instalación cargador (€)"
     },
     "en": {
         "title": "🚗 Multi-Vehicle Financial Simulator",
@@ -97,7 +100,10 @@ translations = {
         "npv_title": "NPV / Net Present Cost:",
         "npv_help": "Total cost brought to today's money value.",
         "graph_analysis": "📊 Graphical Analysis",
-        "methodology_tab": "📚 Mathematical Methodology"
+        "methodology_tab": "📚 Mathematical Methodology",
+        "extras": "**Incentives and Extras**",
+        "subsidy": "Subsidies / Grants (€)",
+        "charger": "Home charger installation (€)"
     }
 }
 
@@ -152,6 +158,10 @@ for i in range(num_vehiculos):
         seg = st.number_input(t["base_insurance"], value=d["seg"], step=50, key=f"seg_{i}")
         depreciacion = st.slider(t["depreciation"], 1.0, 30.0, d["dep"], step=0.5, key=f"dep_{i}") / 100
         
+        st.markdown(t["extras"])
+        subvencion = st.number_input(t["subsidy"], value=0.0, step=500.0, key=f"sub_{i}")
+        cargador = st.number_input(t["charger"], value=0.0, step=100.0, key=f"carga_{i}")
+        
         st.markdown(t["financing"])
         opciones_fin = ["UPFRONT", "RENTING", "LEASING", "LOAN"]
         default_finan = d.get("finan_tipo", "UPFRONT")
@@ -180,6 +190,7 @@ for i in range(num_vehiculos):
         vehiculos_data.append({
             "nombre": nombre, "precio": precio, "consumo": consumo, "coste_u": coste_u,
             "mant": mant, "seg": seg, "depreciacion": depreciacion,
+            "subvencion": subvencion, "cargador": cargador,
             "finan_tipo": finan_tipo, "entrada_pct": entrada_pct, "interes": interes, "plazo": plazo,
             "cuota_mensual": cuota_mensual, "entrada_renting": entrada_renting, "valor_residual": valor_residual,
             "seguro_mant_incluido": seguro_mant_incluido
@@ -230,7 +241,7 @@ for v in vehiculos_data:
 
     for ano in range(anos_propiedad + 1):
         if ano == 0:
-            flujo_t = -v["entrada"]
+            flujo_t = -v["entrada"] - v["cargador"] + v["subvencion"]
         else:
             # Gastos operativos
             if v.get("seguro_mant_incluido", False):
