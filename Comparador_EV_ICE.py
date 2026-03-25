@@ -50,7 +50,8 @@ translations = {
         "financed_leasing": "*(Vehículo de Leasing)*",
         "npv_title": "VAN / Coste Presente Neto:",
         "npv_help": "Gasto total traído a valor de dinero de hoy.",
-        "graph_analysis": "📊 Análisis Gráfico"
+        "graph_analysis": "📊 Análisis Gráfico",
+        "methodology_tab": "📚 Metodología Matemática"
     },
     "en": {
         "title": "🚗 Multi-Vehicle Financial Simulator",
@@ -95,7 +96,8 @@ translations = {
         "financed_leasing": "*(Leasing Vehicle)*",
         "npv_title": "NPV / Net Present Cost:",
         "npv_help": "Total cost brought to today's money value.",
-        "graph_analysis": "📊 Graphical Analysis"
+        "graph_analysis": "📊 Graphical Analysis",
+        "methodology_tab": "📚 Mathematical Methodology"
     }
 }
 
@@ -283,7 +285,7 @@ st.markdown("---")
 
 # --- VISUALIZACIONES ---
 st.header(t["graph_analysis"])
-tab1, tab2 = st.tabs([t["cash_flow"], t["tco"]])
+tab1, tab2, tab3 = st.tabs([t["cash_flow"], t["tco"], t["methodology_tab"]])
 
 with tab1:
     st.write(t["cf_desc"])
@@ -295,6 +297,52 @@ with tab1:
 with tab2:
     st.write(t["tco_desc"])
     st.line_chart(df_acumulado)
+
+with tab3:
+    if lang == "es":
+        st.markdown("""
+        ### 1. Actualización por Inflación
+        A los gastos operativos base anuales (energía, mantenimiento, seguro) se les aplica una tasa de inflación compuesta. Esto modela que las cosas son más caras en el futuro:
+        """)
+        st.latex(r"\text{Gasto\_Inflado}_t = \text{Gasto\_Base} \times (1 + \text{inflación})^t")
+        
+        st.markdown("""
+        ### 2. Valor Actual Neto (VAN / NPV)
+        Para comparar una gran salida de dinero hoy frente a pequeños ahorros a lo largo de los años, descontamos los flujos de caja futuros a un valor presente utilizando una **tasa de descuento**. El VAN representa cuánto dinero de hoy te costará la posesión del vehículo a lo largo de todo el ciclo de vida:
+        """)
+        st.latex(r"\text{VAN} = \sum_{t=0}^{n} \frac{\text{Flujo\_Caja}_t}{(1 + \text{tasa\_descuento})^t}")
+        
+        st.markdown("""
+        ### 3. Fórmulas de Financiación (Sistema Francés)
+        Cuando seleccionas el formato "*Préstamo (LOAN)*", utilizamos el sistema de amortización francés para calcular cuotas fijas:
+        """)
+        st.latex(r"\text{Cuota\_Mensual} = \text{Capital} \times \frac{\text{TIN}/12}{1 - (1 + \text{TIN}/12)^{-(\text{Años} \times 12)}}")
+        
+        st.markdown("""
+        Al final del periodo de análisis (año $n$), si decides vender el vehículo, primero liquidas la **deuda pendiente**, y la ganancia neta o saldo se imputa como flujo de caja en ese último año.
+        """)
+    else:
+        st.markdown("""
+        ### 1. Inflation Indexing
+        Base operational expenses (energy, maintenance, insurance) are subject to compound inflation. This models the rising cost of living over time:
+        """)
+        st.latex(r"\text{Inflated\_Exp}_t = \text{Base\_Exp} \times (1 + \text{inflation})^t")
+        
+        st.markdown("""
+        ### 2. Net Present Value (NPV / VAN)
+        To compare a large cash output today versus smaller savings over 10 years, we discount future cash flows down to a present value using a **discount rate**. The NPV represents how much "money in today's terms" the vehicle cost will drain throughout its lifecycle:
+        """)
+        st.latex(r"\text{NPV} = \sum_{t=0}^{n} \frac{\text{Cash\_Flow}_t}{(1 + \text{discount\_rate})^t}")
+        
+        st.markdown("""
+        ### 3. Constant Loan Formulas (French Amortization)
+        When the "*LOAN*" format is selected, the generalized French amortization system translates your inputs to a fixed monthly quota:
+        """)
+        st.latex(r"\text{Monthly\_Fee} = \text{Principal} \times \frac{\text{TIN}/12}{1 - (1 + \text{TIN}/12)^{-(\text{Years} \times 12)}}")
+        
+        st.markdown("""
+        At the end of the analysis period (year $n$), if you 'resale' the vehicle, you must first clear any **pending debt principal** and the resulting net liquidity is factored as a cash flow in that final year.
+        """)
 
 # --- RESULTADOS FINALES ---
 st.markdown("---")
