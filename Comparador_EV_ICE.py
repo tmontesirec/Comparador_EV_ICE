@@ -54,7 +54,13 @@ translations = {
         "methodology_tab": "📚 Metodología Matemática",
         "extras": "**Incentivos y Extras**",
         "subsidy": "Subvenciones (MOVES, etc.) (€)",
-        "charger": "Coste instalación cargador (€)"
+        "charger": "Coste instalación cargador (€)",
+        "cost_km_energy": "Coste/km (Energía)",
+        "cost_km_tco": "Coste/km (TCO)",
+        "final_table_title": "📋 Resumen Coste por Kilómetro",
+        "return_car": "¿Devolver vehículo? (Fin del contrato)",
+        "final_quota": "Cuota final o V. Residual (€)",
+        "duration_months": "Duración contrato (Meses)"
     },
     "en": {
         "title": "🚗 Multi-Vehicle Financial Simulator",
@@ -103,7 +109,13 @@ translations = {
         "methodology_tab": "📚 Mathematical Methodology",
         "extras": "**Incentives and Extras**",
         "subsidy": "Subsidies / Grants (€)",
-        "charger": "Home charger installation (€)"
+        "charger": "Home charger installation (€)",
+        "cost_km_energy": "Cost/km (Energy)",
+        "cost_km_tco": "Cost/km (TCO)",
+        "final_table_title": "📋 Cost per Kilometer Summary",
+        "return_car": "Return vehicle? (End of contract)",
+        "final_quota": "Final quota or Residual V. (€)",
+        "duration_months": "Contract duration (Months)"
     }
 }
 
@@ -163,14 +175,14 @@ for i in range(num_vehiculos):
         cargador = st.number_input(t["charger"], value=0.0, step=100.0, key=f"carga_{i}")
         
         st.markdown(t["financing"])
-        opciones_fin = ["UPFRONT", "RENTING", "LEASING", "LOAN"]
+        opciones_fin = ["UPFRONT", "RENTING", "LEASING", "LOAN", "MULTI"]
         default_finan = d.get("finan_tipo", "UPFRONT")
         default_idx = opciones_fin.index(default_finan) if default_finan in opciones_fin else 0
         
         finan_tipo = st.selectbox(t["type"], options=opciones_fin, index=default_idx, key=f"fin_tipo_{i}")
         
         # Opciones por defecto
-        entrada_pct = 1.0; interes = 0.0; plazo = 1
+        entrada_pct = 1.0; interes = 0.0; plazo = 1; plazo_meses = 0; devolver_coche = False
         cuota_mensual = 0.0; entrada_renting = 0.0; valor_residual = 0.0; seguro_mant_incluido = False
         
         if finan_tipo == "LOAN":
@@ -186,6 +198,13 @@ for i in range(num_vehiculos):
             entrada_renting = st.number_input(t["initial_payment"], value=2000.0, step=500.0, key=f"ent_leasing_{i}")
             valor_residual = st.number_input(t["residual_value"], value=10000.0, step=1000.0, key=f"val_res_{i}")
             seguro_mant_incluido = st.checkbox(t["mant_ins_included_leasing"], value=False, key=f"seg_mant_leasing_{i}")
+        elif finan_tipo == "MULTI":
+            entrada_renting = st.number_input(t["initial_payment"], value=5000.0, step=500.0, key=f"ent_multi_{i}")
+            plazo_meses = st.number_input(t["duration_months"], value=48, step=12, key=f"meses_multi_{i}")
+            cuota_mensual = st.number_input(t["monthly_fee"], value=300.0, step=10.0, key=f"cuota_multi_{i}")
+            valor_residual = st.number_input(t["final_quota"], value=15000.0, step=1000.0, key=f"cuota_fin_multi_{i}")
+            interes = st.number_input(t["tin"], value=8.5, step=0.5, key=f"int_multi_{i}") / 100
+            devolver_coche = st.checkbox(t["return_car"], value=False, key=f"dev_multi_{i}")
             
         vehiculos_data.append({
             "nombre": nombre, "precio": precio, "consumo": consumo, "coste_u": coste_u,
@@ -193,7 +212,7 @@ for i in range(num_vehiculos):
             "subvencion": subvencion, "cargador": cargador,
             "finan_tipo": finan_tipo, "entrada_pct": entrada_pct, "interes": interes, "plazo": plazo,
             "cuota_mensual": cuota_mensual, "entrada_renting": entrada_renting, "valor_residual": valor_residual,
-            "seguro_mant_incluido": seguro_mant_incluido
+            "seguro_mant_incluido": seguro_mant_incluido, "plazo_meses": plazo_meses, "devolver_coche": devolver_coche
         })
 
 # --- FUNCIONES MATEMÁTICAS ---
@@ -234,10 +253,12 @@ for v in vehiculos_data:
         v["entrada"] = v["precio"] * v["entrada_pct"]
         v["prestamo"] = v["precio"] - v["entrada"]
         cuota_anual_prestamo = calcular_cuota_anual(v["prestamo"], v["interes"], v["plazo"])
-    elif v["finan_tipo"] in ["RENTING", "LEASING"]:
+    elif v["finan_tipo"] in ["RENTING", "LEASING", "MULTI"]:
         v["entrada"] = v["entrada_renting"]
         v["prestamo"] = 0
         cuota_anual_renting_leasing = v["cuota_mensual"] * 12
+
+    año_fin_multi = int(v.get("plazo_meses", 0) / 12) if v["finan_tipo"] == "MULTI" else 0
 
     for ano in range(anos_propiedad + 1):
         if ano == 0:
@@ -248,6 +269,10 @@ for v in vehiculos_data:
                 gasto_base = v["coste_energia_base"]
             else:
                 gasto_base = v["coste_energia_base"] + v["mant"] + v["seg"]
+            
+            # Multiopción: si devuelve el coche, no tiene el coche en los años posteriores al fin del contrato
+            if v["finan_tipo"] == "MULTI" and v.get("devolver_coche", False) and ano > año_fin_multi:
+                gasto_base = 0
                 
             inflacion_factor = (1 + inflacion_anual) ** ano
             gasto_op_inflado = gasto_base * inflacion_factor
@@ -256,10 +281,16 @@ for v in vehiculos_data:
             if v["finan_tipo"] == "LOAN" and ano <= v["plazo"]:
                 pago_financiero = cuota_anual_prestamo
             elif v["finan_tipo"] in ["RENTING", "LEASING"]: 
-                # Asumimos que el renting/leasing dura al menos los anos_propiedad
+                pago_financiero = cuota_anual_renting_leasing
+            elif v["finan_tipo"] == "MULTI" and ano <= año_fin_multi:
                 pago_financiero = cuota_anual_renting_leasing
                 
             flujo_t = -gasto_op_inflado - pago_financiero
+            
+            # Eventos especiales: pago cuota final en Multiopción
+            if v["finan_tipo"] == "MULTI" and ano == año_fin_multi:
+                if not v.get("devolver_coche", False):
+                    flujo_t -= v["valor_residual"] # Pago de la cuota final si decide quedárselo
             
             # Ajustes en el último año (reventa, deuda pendiente, valor residual)
             if ano == anos_propiedad:
@@ -267,11 +298,13 @@ for v in vehiculos_data:
                     deuda_pend = capital_pendiente(v["prestamo"], v["interes"], v["plazo"], anos_propiedad) if v["finan_tipo"] == "LOAN" else 0
                     flujo_t += (v["reventa"] - deuda_pend)
                 elif v["finan_tipo"] == "LEASING":
-                    # En leasing se paga el valor residual para quedarse el coche, teniendo así el valor de reventa.
                     flujo_t += (v["reventa"] - v["valor_residual"])
                 elif v["finan_tipo"] == "RENTING":
-                    # El vehículo se devuelve al final del renting.
                     pass
+                elif v["finan_tipo"] == "MULTI":
+                    if not v.get("devolver_coche", False):
+                        # Solo gana la reventa si se lo quedó al acabar la multiopción
+                        flujo_t += v["reventa"]
                 
         flujos_vehiculo.append(flujo_t)
         npv_vehiculo += flujo_t / ((1 + tasa_descuento) ** ano)
@@ -374,7 +407,31 @@ for i, v in enumerate(vehiculos_data):
             st.write(t["financed_renting"])
         elif v["finan_tipo"] == "LEASING":
             st.write(t["financed_leasing"])
+        elif v["finan_tipo"] == "MULTI":
+            dev_text = "(Se devuelve)" if v.get("devolver_coche") else "(Se adquiere al final)"
+            st.write(f"*(Multiopción {dev_text})*")
             
         st.markdown(f"### {t['npv_title']}")
         st.markdown(f"### **{coste_presente:,.2f} €**")
         st.caption(t["npv_help"])
+
+st.markdown("---")
+st.header(t["final_table_title"])
+
+table_data = []
+for v in vehiculos_data:
+    coste_energia_km = v["coste_energia_base"] / km_anuales if km_anuales > 0 else 0
+    total_years = int(v.get("plazo_meses", 0) / 12) if (v["finan_tipo"] == "MULTI" and v.get("devolver_coche", False)) else anos_propiedad
+    # Asegurar que los años totales no superen el estudio macro si los meses son mayores (ej. 72 meses vs 5 años), limitando a anos_propiedad
+    total_years = min(total_years, anos_propiedad)
+        
+    total_km = total_years * km_anuales
+    coste_tco_km = abs(v["npv"]) / total_km if total_km > 0 else 0
+    
+    table_data.append({
+        t["vehicle"]: v["nombre"],
+        t["cost_km_energy"]: f"{coste_energia_km:.4f} €",
+        t["cost_km_tco"]: f"{coste_tco_km:.4f} €"
+    })
+
+st.table(pd.DataFrame(table_data).set_index(t["vehicle"]))
