@@ -170,47 +170,50 @@ for i in range(num_vehiculos):
         precio = st.number_input(t["base_price"], value=d["precio"], step=1000, key=f"pre_{i}")
         
         st.markdown(t["operations"])
-        consumo = st.number_input(t["consumption"], value=d["energia"], step=0.5, key=f"con_{i}")
-        coste_u = st.number_input(t["energy_cost"], value=d["coste_u"], step=0.01, key=f"cos_{i}")
-        mant = st.number_input(t["base_maintenance"], value=d["mant"], step=50, key=f"man_{i}")
-        seg = st.number_input(t["base_insurance"], value=d["seg"], step=50, key=f"seg_{i}")
-        depreciacion = st.slider(t["depreciation"], 1.0, 30.0, d["dep"], step=0.5, key=f"dep_{i}") / 100
         
-        st.markdown(t["extras"])
-        subvencion = st.number_input(t["subsidy"], value=0.0, step=500.0, key=f"sub_{i}")
-        cargador = st.number_input(t["charger"], value=0.0, step=100.0, key=f"carga_{i}")
-        
-        st.markdown(t["financing"])
-        opciones_fin = ["UPFRONT", "RENTING", "LEASING", "LOAN", "MULTI"]
-        default_finan = d.get("finan_tipo", "UPFRONT")
-        default_idx = opciones_fin.index(default_finan) if default_finan in opciones_fin else 0
-        
-        finan_tipo = st.selectbox(t["type"], options=opciones_fin, index=default_idx, key=f"fin_tipo_{i}")
-        
-        # Opciones por defecto
-        entrada_pct = 1.0; interes = 0.0; plazo = 1; plazo_meses = 0; devolver_coche = False
-        cuota_mensual = 0.0; entrada_renting = 0.0; valor_residual = 0.0; seguro_mant_incluido = False
-        
-        if finan_tipo == "LOAN":
-            entrada_pct = st.slider(t["down_payment_pct"], 0, 80, 20, key=f"ent_{i}") / 100
-            interes = st.number_input(t["tin"], value=7.5, step=0.5, key=f"int_{i}") / 100
-            plazo = st.slider(t["term_years"], 1, 10, 5, key=f"pla_{i}")
-        elif finan_tipo == "RENTING":
-            cuota_mensual = st.number_input(t["monthly_fee"], value=400.0, step=10.0, key=f"cuota_renting_{i}")
-            entrada_renting = st.number_input(t["initial_payment"], value=0.0, step=500.0, key=f"ent_renting_{i}")
-            seguro_mant_incluido = st.checkbox(t["mant_ins_included"], value=True, key=f"seg_mant_incl_{i}")
-        elif finan_tipo == "LEASING":
-            cuota_mensual = st.number_input(t["monthly_fee"], value=350.0, step=10.0, key=f"cuota_leasing_{i}")
-            entrada_renting = st.number_input(t["initial_payment"], value=2000.0, step=500.0, key=f"ent_leasing_{i}")
-            valor_residual = st.number_input(t["residual_value"], value=10000.0, step=1000.0, key=f"val_res_{i}")
-            seguro_mant_incluido = st.checkbox(t["mant_ins_included_leasing"], value=False, key=f"seg_mant_leasing_{i}")
-        elif finan_tipo == "MULTI":
-            entrada_renting = st.number_input(t["initial_payment"], value=5000.0, step=500.0, key=f"ent_multi_{i}")
-            plazo_meses = st.number_input(t["duration_months"], value=48, step=12, key=f"meses_multi_{i}")
-            cuota_mensual = st.number_input(t["monthly_fee"], value=300.0, step=10.0, key=f"cuota_multi_{i}")
-            valor_residual = st.number_input(t["final_quota"], value=15000.0, step=1000.0, key=f"cuota_fin_multi_{i}")
-            interes = st.number_input(t["tin"], value=8.5, step=0.5, key=f"int_multi_{i}") / 100
-            devolver_coche = st.checkbox(t["return_car"], value=False, key=f"dev_multi_{i}")
+        # Ocultar todos los parámetros avanzados dentro de un "expander" desplegable para no saturar el móvil
+        with st.expander(f"⚙️ {t['operations'].replace('**','')} & {t['financing'].replace('**','')}", expanded=False):
+            consumo = st.number_input(t["consumption"], value=d["energia"], step=0.5, key=f"con_{i}")
+            coste_u = st.number_input(t["energy_cost"], value=d["coste_u"], step=0.01, key=f"cos_{i}")
+            mant = st.number_input(t["base_maintenance"], value=d["mant"], step=50, key=f"man_{i}")
+            seg = st.number_input(t["base_insurance"], value=d["seg"], step=50, key=f"seg_{i}")
+            depreciacion = st.slider(t["depreciation"], 1.0, 30.0, d["dep"], step=0.5, key=f"dep_{i}") / 100
+            
+            st.markdown(t["extras"])
+            subvencion = st.number_input(t["subsidy"], value=0.0, step=500.0, key=f"sub_{i}")
+            cargador = st.number_input(t["charger"], value=0.0, step=100.0, key=f"carga_{i}")
+            
+            st.markdown(t["financing"])
+            opciones_fin = ["UPFRONT", "RENTING", "LEASING", "LOAN", "MULTI"]
+            default_finan = d.get("finan_tipo", "UPFRONT")
+            default_idx = opciones_fin.index(default_finan) if default_finan in opciones_fin else 0
+            
+            finan_tipo = st.selectbox(t["type"], options=opciones_fin, index=default_idx, key=f"fin_tipo_{i}")
+            
+            # Opciones por defecto
+            entrada_pct = 1.0; interes = 0.0; plazo = 1; plazo_meses = 0; devolver_coche = False
+            cuota_mensual = 0.0; entrada_renting = 0.0; valor_residual = 0.0; seguro_mant_incluido = False
+            
+            if finan_tipo == "LOAN":
+                entrada_pct = st.slider(t["down_payment_pct"], 0, 80, 20, key=f"ent_{i}") / 100
+                interes = st.number_input(t["tin"], value=7.5, step=0.5, key=f"int_{i}") / 100
+                plazo = st.slider(t["term_years"], 1, 10, 5, key=f"pla_{i}")
+            elif finan_tipo == "RENTING":
+                cuota_mensual = st.number_input(t["monthly_fee"], value=400.0, step=10.0, key=f"cuota_renting_{i}")
+                entrada_renting = st.number_input(t["initial_payment"], value=0.0, step=500.0, key=f"ent_renting_{i}")
+                seguro_mant_incluido = st.checkbox(t["mant_ins_included"], value=True, key=f"seg_mant_incl_{i}")
+            elif finan_tipo == "LEASING":
+                cuota_mensual = st.number_input(t["monthly_fee"], value=350.0, step=10.0, key=f"cuota_leasing_{i}")
+                entrada_renting = st.number_input(t["initial_payment"], value=2000.0, step=500.0, key=f"ent_leasing_{i}")
+                valor_residual = st.number_input(t["residual_value"], value=10000.0, step=1000.0, key=f"val_res_{i}")
+                seguro_mant_incluido = st.checkbox(t["mant_ins_included_leasing"], value=False, key=f"seg_mant_leasing_{i}")
+            elif finan_tipo == "MULTI":
+                entrada_renting = st.number_input(t["initial_payment"], value=5000.0, step=500.0, key=f"ent_multi_{i}")
+                plazo_meses = st.number_input(t["duration_months"], value=48, step=12, key=f"meses_multi_{i}")
+                cuota_mensual = st.number_input(t["monthly_fee"], value=300.0, step=10.0, key=f"cuota_multi_{i}")
+                valor_residual = st.number_input(t["final_quota"], value=15000.0, step=1000.0, key=f"cuota_fin_multi_{i}")
+                interes = st.number_input(t["tin"], value=8.5, step=0.5, key=f"int_multi_{i}") / 100
+                devolver_coche = st.checkbox(t["return_car"], value=False, key=f"dev_multi_{i}")
             
         vehiculos_data.append({
             "nombre": nombre, "precio": precio, "consumo": consumo, "coste_u": coste_u,
